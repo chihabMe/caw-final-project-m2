@@ -1,17 +1,39 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Create a dummy client if credentials are missing to prevent errors
-const DUMMY_URL = 'https://placeholder.supabase.co';
-const DUMMY_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDUxOTI4MDAsImV4cCI6MTk2MDc2ODgwMH0.placeholder';
+let supabaseInstance: SupabaseClient | null = null;
+let initializationAttempted = false;
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('⚠️ Missing Supabase credentials. Using placeholder client. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to environment variables.');
+
+function getSupabaseClient(): SupabaseClient | null {
+  if (initializationAttempted) {
+    return supabaseInstance;
+  }
+  
+  initializationAttempted = true;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.warn('⚠️ Supabase credentials not found. Database features will be disabled.');
+    return null;
+  }
+
+  // Basic validation: Supabase keys are JWTs (3 parts separated by dots)
+  // The error "split(...)[1] is undefined" likely comes from trying to parse a non-JWT key
+  if (supabaseKey.split('.').length < 3) {
+    console.warn('⚠️ Invalid Supabase Key format. It should be a JWT (3 parts separated by dots). Database features disabled.');
+    return null;
+  }
+  
+  try {
+    supabaseInstance = createClient(supabaseUrl, supabaseKey);
+    return supabaseInstance;
+  } catch (error) {
+    console.error('Failed to initialize Supabase:', error);
+    return null;
+  }
 }
 
-export const supabase = createClient(
-  supabaseUrl || DUMMY_URL, 
-  supabaseKey || DUMMY_KEY
-);
+// Export as a getter that lazily initializes
+export const supabase = getSupabaseClient();

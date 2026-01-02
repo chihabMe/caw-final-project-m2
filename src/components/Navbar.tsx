@@ -60,8 +60,10 @@ const Navbar = () => {
           className="font-bold text-lg tracking-tight"
         >
           <span className="gradient-text">
-            {profile.name.split(" ")[0][0]}
-            {profile.name.split(" ")[1][0]}
+            {profile.name.split(" ")[0][0].toUpperCase()}
+            {profile.name.split(" ").length > 1
+              ? profile.name.split(" ")[1][0].toUpperCase()
+              : profile.name.slice(1, 2).toUpperCase()}
           </span>
         </motion.button>
 

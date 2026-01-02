@@ -46,6 +46,11 @@ const Admin = () => {
   }, []);
 
   const checkUser = async () => {
+    if (!supabase) {
+      toast.error("Database not configured");
+      navigate("/login");
+      return;
+    }
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       navigate("/login");
@@ -53,6 +58,11 @@ const Admin = () => {
   };
 
   const fetchData = async () => {
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     const { data: projectsData, error: projectsError } = await supabase
       .from("projects")
       .select("*")
@@ -74,6 +84,11 @@ const Admin = () => {
 
   const handleAddProject = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!supabase) {
+      toast.error("Database not configured");
+      return;
+    }
+
     const { error } = await supabase.from("projects").insert([
       { title, description, live_url: liveUrl, github_url: githubUrl, image_url: imageUrl }
     ]);
@@ -92,7 +107,9 @@ const Admin = () => {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    if (supabase) {
+      await supabase.auth.signOut();
+    }
     navigate("/login");
   };
 

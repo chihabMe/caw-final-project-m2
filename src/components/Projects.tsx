@@ -32,6 +32,11 @@ const Projects = () => {
 
   useEffect(() => {
     const fetchProjects = async () => {
+      if (!supabase) {
+        console.log('Supabase not initialized, using static projects');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('projects')
         .select('*')

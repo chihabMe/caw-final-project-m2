@@ -17,6 +17,12 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
+    if (!supabase) {
+      toast.error("Authentication not configured");
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,

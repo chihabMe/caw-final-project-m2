@@ -15,6 +15,11 @@ const Contact = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!supabase) {
+      toast.error("Database not configured. Please contact via email.");
+      return;
+    }
+
     // Send to Supabase
     const { error } = await supabase.from('contacts').insert([
       { name: formData.name, email: formData.email, message: formData.message }
