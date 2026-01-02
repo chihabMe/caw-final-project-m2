@@ -1,4 +1,6 @@
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client"; 
+import { toast } from "sonner";
 import { Mail, MapPin, Send, Github, Linkedin, ArrowUpRight } from "lucide-react";
 import { profile } from "@/constants/profile";
 import { useState } from "react";
@@ -10,10 +12,23 @@ const Contact = () => {
     message: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Formspree or similar service can be integrated here
-    window.location.href = `mailto:${profile.email}?subject=Portfolio Contact from ${formData.name}&body=${formData.message}`;
+    
+    // Send to Supabase
+    const { error } = await supabase.from('contacts').insert([
+      { name: formData.name, email: formData.email, message: formData.message }
+    ]);
+
+    if (error) {
+      toast.error("Failed to send message: " + error.message);
+    } else {
+      toast.success("Message sent successfully!");
+      setFormData({ name: "", email: "", message: "" });
+      
+      // Optional: Also open mailto as fallback/notification
+      // window.location.href = `mailto:${profile.email}...`; 
+    }
   };
 
   return (

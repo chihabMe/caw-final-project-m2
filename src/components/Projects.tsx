@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExternalLink, Github, ArrowUpRight, Terminal } from "lucide-react";
 import { projects } from "@/constants/projects";
@@ -27,19 +28,50 @@ const itemVariants: Variants = {
 const Projects = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [dbProjects, setDbProjects] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error('Error fetching projects:', error);
+      } else if (data) {
+        const mappedProjects = data.map(p => ({
+          id: p.id,
+          title: p.title,
+          description: p.description,
+          techStack: p.tags || [],
+          githubUrl: p.github_url,
+          liveDemoUrl: p.live_url
+        }));
+        setDbProjects(mappedProjects);
+      }
+    };
+
+    fetchProjects();
+  }, []);
+
+  // Use DB projects if available, otherwise fall back to empty or static
+  // For this transition, we'll try to use dbProjects. 
+  // If user hasn't added any, it will be empty.
+  const displayProjects = dbProjects.length > 0 ? dbProjects : projects;
 
   // Get all unique tags from projects
   const allTags = useMemo(() => {
     const tags = new Set<string>();
-    projects.forEach((project) => {
-      project.techStack.forEach((tech) => tags.add(tech));
+    displayProjects.forEach((project) => {
+      project.techStack.forEach((tech: string) => tags.add(tech));
     });
     return Array.from(tags).sort();
-  }, []);
+  }, [displayProjects]);
 
   // Filter projects based on search and tags
   const filteredProjects = useMemo(() => {
-    return projects.filter((project) => {
+    return displayProjects.filter((project) => {
       const matchesSearch =
         searchQuery === "" ||
         project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -59,8 +91,8 @@ const Projects = () => {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 text-primary/5 font-mono text-xs whitespace-pre hidden lg:block">
           {`$ ls -la projects/
-total ${projects.length}
-drwxr-xr-x  ${projects.length} chihab  staff  ${projects.length * 64}B
+total ${displayProjects.length}
+drwxr-xr-x  ${displayProjects.length} chihab  staff  ${displayProjects.length * 64}B
 -rw-r--r--  1 chihab  staff  README.md
 -rw-r--r--  1 chihab  staff  package.json`}
         </div>
@@ -100,7 +132,7 @@ drwxr-xr-x  ${projects.length} chihab  staff  ${projects.length * 64}B
           animate={{ opacity: 1 }}
           className="text-muted-foreground text-xs font-mono mb-6"
         >
-          {`> Found ${filteredProjects.length} of ${projects.length} projects`}
+          {`> Found ${filteredProjects.length} of ${displayProjects.length} projects`}
         </motion.p>
 
         {/* Projects grid */}
