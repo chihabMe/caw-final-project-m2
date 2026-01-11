@@ -3,6 +3,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+console.log(supabaseUrl, supabaseKey);
+
 let supabaseInstance: SupabaseClient | null = null;
 let initializationAttempted = false;
 
@@ -19,10 +21,11 @@ function getSupabaseClient(): SupabaseClient | null {
     return null;
   }
 
-  // Basic validation: Supabase keys are JWTs (3 parts separated by dots)
-  // The error "split(...)[1] is undefined" likely comes from trying to parse a non-JWT key
-  if (supabaseKey.split('.').length < 3) {
-    console.warn('⚠️ Invalid Supabase Key format. It should be a JWT (3 parts separated by dots). Database features disabled.');
+  // Basic validation: Supabase keys are JWTs (3 parts separated by dots) or the new sb_publishable_ format
+  const isValidKey = supabaseKey.startsWith('sb_publishable_') || supabaseKey.split('.').length >= 3;
+
+  if (!isValidKey) {
+    console.warn('⚠️ Invalid Supabase Key format. It should be a JWT (3 parts separated by dots) or an sb_publishable_ key. Database features disabled.');
     return null;
   }
   
